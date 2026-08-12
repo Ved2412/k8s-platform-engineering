@@ -1,9 +1,9 @@
 replicaCount: 1
 
 image:
-  repository: vedk12/my-nginx
+  repository: ghcr.io/ved2412/my-nginx # Note the lowercase 'v' here!
   pullPolicy: IfNotPresent
-  tag: "1.0.0"
+  tag: "latest"
 
 service:
   type: ClusterIP
