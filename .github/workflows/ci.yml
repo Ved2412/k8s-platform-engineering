@@ -1,0 +1,50 @@
+name: CI - Build, Scan, and Push
+
+# Trigger this workflow when code is pushed to the main branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    # Grant the workflow permission to push to the GitHub Container Registry
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # 1. Check out the code from GitHub
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Log in to the GitHub Container Registry (GHCR)
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 3. Build the Docker image (lowercase the repository name for GHCR compatibility)
+      - name: Build Docker image
+        run: |
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/my-nginx:latest
+          docker build -t $IMAGE_NAME .
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+
+      # 4. Run Trivy Security Scan (DevSecOps Shift-Left)
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}
+          format: "table"
+          exit-code: "0" # Set to '1' to fail the pipeline if CRITICAL vulnerabilities are found
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      # 5. Push the secure image to GHCR
+      - name: Push Docker image to GHCR
+        run: docker push ${{ env.IMAGE_NAME }}
