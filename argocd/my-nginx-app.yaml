@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-nginx-app
+  # The Application CRD must be created in the argocd namespace
+  namespace: argocd
+spec:
+  # The project to belong to (default is fine)
+  project: default
+  # Where is the source code?
+  source:
+    repoURL: https://github.com/Ved2412/k8s-platform-engineering.git
+    targetRevision: main
+    path: my-nginx-chart
+  # Where should it deploy?
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  # Configure automatic syncing behavior
+  syncPolicy:
+    automated:
+      prune: true # Deletes resources in the cluster if they are removed from Git
+      selfHeal: true # Reverts manual changes made to the cluster back to the Git state
+    syncOptions:
+      - CreateNamespace=true
